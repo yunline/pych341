@@ -1,5 +1,6 @@
 import ctypes
 from ctypes import *
+from .ch341_compat import CH341DLL
 import platform
 import warnings
 
@@ -13,10 +14,11 @@ class CH341Error(Exception):
 
 if platform.system()=="Windows":
     try:
+        CH341DLL.prefix="CH341"
         if platform.architecture()[0]=="64bit":
-            ch341dll=windll.CH341DLLA64
+            ch341dll=CH341DLL(windll.CH341DLLA64)
         elif platform.architecture()[0]=="32bit":
-            ch341dll=windll.CH341DLL
+            ch341dll=CH341DLL(windll.CH341DLL)
         else:
             raise RuntimeError("Unknown architecture")
 
@@ -28,11 +30,13 @@ if platform.system()=="Windows":
 else:
     raise RuntimeError("Platform '%s' is not supported."%platform.system())
 
+del CH341DLL
+
 def get_dll_version():
-    return ch341dll.CH341GetVersion()
+    return ch341dll.GetVersion()
 
 def get_drv_version():
-    result=ch341dll.CH341GetDrvVersion()
+    result=ch341dll.GetDrvVersion()
     if not result:
         raise CH341Error("Operation Failed.")
     return result
@@ -57,14 +61,14 @@ class Ch341:
         self.index=index
 
     def open(self,exclusive=0):
-        self.handle=ch341dll.CH341OpenDevice(self.index)
+        self.handle=ch341dll.OpenDevice(self.index)
         if self.handle<0:
             raise CH341Error("Failed to open device %d."%self.index)
         self.reset()
         self.set_exclusive(exclusive)
     
     def close(self):
-        ch341dll.CH341CloseDevice(self.index)
+        ch341dll.CloseDevice(self.index)
 
     def __enter__(self):
         self.open()
@@ -74,24 +78,24 @@ class Ch341:
         self.close()
 
     def reset(self):
-        result=ch341dll.CH341ResetDevice(self.index)
+        result=ch341dll.ResetDevice(self.index)
         if not result:
             raise CH341Error("Operation Failed.")
     
     def get_ic_version(self):
-        result=ch341dll.CH341GetVerIC(self.index)
+        result=ch341dll.GetVerIC(self.index)
         if not result:
             raise CH341Error("Operation Failed.")
         return result
     
     def get_name(self):
-        result=ch341dll.CH341GetDeviceName(self.index)
+        result=ch341dll.GetDeviceName(self.index)
         if not result:
             raise CH341Error("Operation Failed.")
         return string_at(result).decode()
     
     def set_exclusive(self,exclusive):
-        result=ch341dll.CH341SetExclusive(self.index,exclusive)
+        result=ch341dll.SetExclusive(self.index,exclusive)
         if not result:
             raise CH341Error("Operation Failed.")
     
@@ -124,7 +128,7 @@ class Ch341:
         buf[3]=mCH341A_CMD_I2C_STM_END
         length=c_ulong(0)
 
-        result=ch341dll.CH341WriteRead(self.index,4,byref(buf),
+        result=ch341dll.WriteRead(self.index,4,byref(buf),
             32,1,byref(length),byref(buf))
         
         if not (result and length):
@@ -140,7 +144,7 @@ class Ch341:
         cmd[1]=mCH341A_CMD_I2C_STM_STA if start else mCH341A_CMD_I2C_STM_STO
         cmd[2]=mCH341A_CMD_I2C_STM_END
         length=c_ulong(3)
-        result=ch341dll.CH341WriteData(self.index,byref(cmd),byref(length))
+        result=ch341dll.WriteData(self.index,byref(cmd),byref(length))
         if not result:
             raise CH341Error("Operation Failed.")
 
@@ -150,13 +154,13 @@ class Ch341:
         # speed = 2: 400 kHz
         # speed = 3: 800 kHz
         speed=max(0,min(3,speed))
-        result=ch341dll.CH341SetStream(self.index,speed)
+        result=ch341dll.SetStream(self.index,speed)
         if not result:
             raise CH341Error("Operation Failed.")
     
     def i2c_read_byte(self,dev_addr,addr):
         out=c_ubyte()
-        result=ch341dll.CH341ReadI2C(self.index,dev_addr,addr,byref(out))
+        result=ch341dll.ReadI2C(self.index,dev_addr,addr,byref(out))
         if not result:
             raise CH341Error("Operation Failed.")
         return out.value
@@ -167,13 +171,13 @@ class Ch341:
         else:
             read_buf=(c_ubyte*length).from_buffer(buf)
         write_buf=(c_ubyte*2)((dev_addr<<1),addr)
-        result=ch341dll.CH341StreamI2C(self.index,2,byref(write_buf),length,byref(read_buf))
+        result=ch341dll.StreamI2C(self.index,2,byref(write_buf),length,byref(read_buf))
         if not result:
             raise CH341Error("Operation Failed.")
         return read_buf
     
     def i2c_write_byte(self,dev_addr,addr,byte):
-        result=ch341dll.CH341WriteI2C(self.index,dev_addr,addr,byte)
+        result=ch341dll.WriteI2C(self.index,dev_addr,addr,byte)
         if not result:
             raise CH341Error("Operation Failed.")
         
@@ -182,7 +186,7 @@ class Ch341:
         buf.extend(data)
         write_buf=(c_ubyte*(length+2)).from_buffer(buf)
 
-        result=ch341dll.CH341StreamI2C(self.index,length+2,byref(write_buf),0,0)
+        result=ch341dll.StreamI2C(self.index,length+2,byref(write_buf),0,0)
         if not result:
             raise CH341Error("Operation Failed.")
 
