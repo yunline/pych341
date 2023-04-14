@@ -14,9 +14,9 @@ python setup.py install
 
 ### 开发进度
 
-- [√] i2c
-- [X] spi
-- [X] 串口
-- [√] mpu6050例程
-- [X] ssd1306例程
-- [X] at24cXX例程
+- [x] i2c
+- [ ] spi
+- [ ] 串口
+- [x] mpu6050例程
+- [ ] ssd1306例程
+- [ ] at24cXX例程
