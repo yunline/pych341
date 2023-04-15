@@ -1,4 +1,5 @@
 from setuptools import setup
+import platform
 
 PACKAGEDATA={
     "name":  "pych341",
@@ -24,5 +25,10 @@ data_aa64={
 data_win={
     "packages":  ['ch341','ch341.examples'],
 }
+
+if platform.system()=="Windows":
+    PACKAGEDATA.update(data_win)
+elif platform.system()=="Linux":
+    PACKAGEDATA.update(data_aa64)
 
 setup(**PACKAGEDATA)
