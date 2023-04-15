@@ -27,6 +27,13 @@ if platform.system()=="Windows":
             "Try get ch341 drivers here: "
             "https://www.wch.cn/downloads/CH341PAR_EXE.html")
 
+elif platform.system()=="Linux":
+    from importlib.resources import files
+    name = str(files('ch341').joinpath('lib/libch347.so'))
+    CH341DLL.prefix="CH34x"
+    ch341dll=CH341DLL(cdll.LoadLibrary(name))
+    del files
+
 else:
     raise RuntimeError("Platform '%s' is not supported."%platform.system())
 
