@@ -185,7 +185,41 @@ class Ch341:
         result=ch341dll.CH341StreamI2C(self.index,length+2,byref(write_buf),0,0)
         if not result:
             raise CH341Error("Operation Failed.")
+    
+    def set_eeprom_type(self,eeptom_type):
+        self.eeprom=eeptom_type
+    
+    def eeprom_read(self,addr,length,buf):
+        read_buf=(c_ubyte*length).from_buffer(buf)
 
+        result=ch341dll.CH341ReadEEPROM(self.index,self.eeprom,addr,length,byref(read_buf))
+        if not result:
+            raise CH341Error("Operation Failed.")
+    
+    def eeprom_write(self,addr,length,buf):
+        write_buf=(c_ubyte*length).from_buffer(buf)
+
+        result=ch341dll.CH341WriteEEPROM(self.index,self.eeprom,addr,length,byref(write_buf))
+        if not result:
+            raise CH341Error("Operation Failed.")
+
+eeprom_enum=[
+        "ID_24C01",
+        "ID_24C02",
+        "ID_24C04",
+        "ID_24C08",
+        "ID_24C16",
+        "ID_24C32",
+        "ID_24C64",
+        "ID_24C128",
+        "ID_24C256",
+        "ID_24C512",
+        "ID_24C1024",
+        "ID_24C2048",
+        "ID_24C4096"]
+globals().update(
+    {i[1]:i[0] for i in enumerate(eeprom_enum)
+    })
 
 IC_VER_CH341A   = 0x20
 IC_VER_CH341A3  = 0x30
@@ -201,3 +235,5 @@ __all__=[
     "get_dll_version",
     "get_drv_version",
     ]
+
+__all__.extend(eeprom_enum)
