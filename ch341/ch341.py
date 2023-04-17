@@ -64,7 +64,7 @@ class Ch341:
     def __init__(self, index: int = 0):
         self.index = index
 
-    def open(self, exclusive=0):
+    def open(self, exclusive: bool = False):
         self.handle = ch341dll.CH341OpenDevice(self.index)
         if self.handle < 0:
             raise CH341Error("Failed to open device %d." % self.index)
@@ -98,7 +98,7 @@ class Ch341:
             raise CH341Error("Operation Failed.")
         return string_at(result).decode()
 
-    def set_exclusive(self, exclusive):
+    def set_exclusive(self, exclusive: bool):
         result = ch341dll.CH341SetExclusive(self.index, exclusive)
         if not result:
             raise CH341Error("Operation Failed.")
@@ -163,14 +163,7 @@ class Ch341:
         if not result:
             raise CH341Error("Operation Failed.")
 
-    def i2c_read_byte(self, dev_addr, addr):
-        out = c_ubyte()
-        result = ch341dll.CH341ReadI2C(self.index, dev_addr, addr, byref(out))
-        if not result:
-            raise CH341Error("Operation Failed.")
-        return out.value
-
-    def i2c_read(self, dev_addr, addr, length, buf=None):
+    def i2c_read(self, dev_addr: int, addr: int, length: int, buf: bytearray = None):
         if buf is None:
             read_buf = (c_ubyte * length)()
         else:
@@ -183,12 +176,7 @@ class Ch341:
             raise CH341Error("Operation Failed.")
         return read_buf
 
-    def i2c_write_byte(self, dev_addr, addr, byte):
-        result = ch341dll.CH341WriteI2C(self.index, dev_addr, addr, byte)
-        if not result:
-            raise CH341Error("Operation Failed.")
-
-    def i2c_write(self, dev_addr, addr, length, data):
+    def i2c_write(self, dev_addr: int, addr: int, length: int, data: bytearray):
         buf = bytearray([dev_addr << 1, addr])
         buf.extend(data)
         write_buf = (c_ubyte * (length + 2)).from_buffer(buf)
@@ -197,10 +185,10 @@ class Ch341:
         if not result:
             raise CH341Error("Operation Failed.")
 
-    def set_eeprom_type(self, eeptom_type):
+    def set_eeprom_type(self, eeptom_type: int):
         self.eeprom = eeptom_type
 
-    def eeprom_read(self, addr, length, buf):
+    def eeprom_read(self, addr: int, length: int, buf: bytearray):
         read_buf = (c_ubyte * length).from_buffer(buf)
 
         result = ch341dll.CH341ReadEEPROM(
@@ -209,7 +197,7 @@ class Ch341:
         if not result:
             raise CH341Error("Operation Failed.")
 
-    def eeprom_write(self, addr, length, buf):
+    def eeprom_write(self, addr: int, length: int, buf: bytearray):
         write_buf = (c_ubyte * length).from_buffer(buf)
 
         result = ch341dll.CH341WriteEEPROM(
@@ -220,19 +208,19 @@ class Ch341:
 
 
 eeprom_enum = [
-    "ID_24C01",
-    "ID_24C02",
-    "ID_24C04",
-    "ID_24C08",
-    "ID_24C16",
-    "ID_24C32",
-    "ID_24C64",
-    "ID_24C128",
-    "ID_24C256",
-    "ID_24C512",
-    "ID_24C1024",
-    "ID_24C2048",
-    "ID_24C4096",
+    "EEPROM_24C01",
+    "EEPROM_24C02",
+    "EEPROM_24C04",
+    "EEPROM_24C08",
+    "EEPROM_24C16",
+    "EEPROM_24C32",
+    "EEPROM_24C64",
+    "EEPROM_24C128",
+    "EEPROM_24C256",
+    "EEPROM_24C512",
+    "EEPROM_24C1024",
+    "EEPROM_24C2048",
+    "EEPROM_24C4096",
 ]
 globals().update({i[1]: i[0] for i in enumerate(eeprom_enum)})
 
