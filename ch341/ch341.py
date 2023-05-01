@@ -2,6 +2,7 @@ import ctypes
 from ctypes import *
 import platform
 import warnings
+from typing import Optional
 
 pyver = [int(i) for i in platform.python_version_tuple()]
 
@@ -58,6 +59,13 @@ mCH341A_CMD_I2C_STM_US = 0x40
 mCH341A_CMD_I2C_STM_MS = 0x50
 mCH341A_CMD_I2C_STM_DLY = 0x0F
 mCH341A_CMD_I2C_STM_END = 0x00
+
+SPI_NOCS = 0x00
+SPI_CS0 = 0x80
+SPI_CS1 = 0x81
+SPI_CS2 = 0x82
+SPI_MSBFIRST = 0x80
+SPI_LSBFIRST = 0x00
 
 
 class Ch341:
@@ -206,6 +214,29 @@ class Ch341:
         if not result:
             raise CH341Error("Operation Failed.")
 
+    def spi_write(
+        self, buf1: bytearray, buf2: Optional[bytearray] = None, /, cs:int=SPI_NOCS
+    ):
+        length = len(buf1)
+        if buf2 is None:
+            write_buf = (c_ubyte * length).from_buffer(buf1.copy())
+            result = ch341dll.CH341StreamSPI4(self.index, cs, length, byref(write_buf))
+        else:
+            if length != len(buf2):
+                raise CH341Error("Length of buf1 and buf2 must be the same")
+            write_buf1 = (c_ubyte * length).from_buffer(buf1.copy())
+            write_buf2 = (c_ubyte * length).from_buffer(buf2.copy())
+            result = ch341dll.CH341StreamSPI5(
+                self.index,
+                cs,
+                length,
+                byref(write_buf1),
+                byref(write_buf2),
+            )
+
+        if not result:
+            raise CH341Error("Operation Failed.")
+
 
 eeprom_enum = [
     "EEPROM_24C01",
@@ -228,9 +259,18 @@ IC_VER_CH341A = 0x20
 IC_VER_CH341A3 = 0x30
 
 __all__ = [
+    # Errors
     "CH341Error",
+    # Constants
     "IC_VER_CH341A",
     "IC_VER_CH341A3",
+    "SPI_NOCS",
+    "SPI_CS0",
+    "SPI_CS1",
+    "SPI_CS2",
+    "SPI_MSBFIRST",
+    "SPI_LSBFIRST",
+    # Classes and Methods
     "Ch341",
     "get_dll_version",
     "get_drv_version",
