@@ -71,6 +71,7 @@ SPI_LSBFIRST = 0x00
 class Ch341:
     def __init__(self, index: int = 0):
         self.index = index
+        self._eeprom_type = None
 
     def open(self, exclusive: bool = False):
         self.handle = ch341dll.CH341OpenDevice(self.index)
@@ -193,29 +194,40 @@ class Ch341:
         if not result:
             raise CH341Error("Operation Failed.")
 
-    def set_eeprom_type(self, eeptom_type: int):
-        self.eeprom = eeptom_type
+    def set_eeprom_type(self, eeprom_type: int):
+        if not isinstance(eeprom_type, int):
+            raise TypeError(
+                "Argument 'eeprom_type' must be int, got %s."
+                % type(eeprom_type).__name__
+            )
+        self._eeprom_type = eeprom_type
 
-    def eeprom_read(self, addr: int, length: int, buf: bytearray):
+    def eeprom_read(self, addr: int, buf: bytearray, length: int):
+        if self._eeprom_type is None:
+            raise CH341Error("EEPROM type is not specified.")
         read_buf = (c_ubyte * length).from_buffer(buf)
 
         result = ch341dll.CH341ReadEEPROM(
-            self.index, self.eeprom, addr, length, byref(read_buf)
+            self.index, self._eeprom_type, addr, length, byref(read_buf)
         )
         if not result:
             raise CH341Error("Operation Failed.")
 
-    def eeprom_write(self, addr: int, length: int, buf: bytearray):
+    def eeprom_write(self, addr: int, buf: bytearray, length: Optional[int] = None, /):
+        if self._eeprom_type is None:
+            raise CH341Error("EEPROM type is not specified.")
+        if length is None:
+            length = len(buf)
         write_buf = (c_ubyte * length).from_buffer(buf)
 
         result = ch341dll.CH341WriteEEPROM(
-            self.index, self.eeprom, addr, length, byref(write_buf)
+            self.index, self._eeprom_type, addr, length, byref(write_buf)
         )
         if not result:
             raise CH341Error("Operation Failed.")
 
     def spi_write(
-        self, buf1: bytearray, buf2: Optional[bytearray] = None, /, cs:int=SPI_NOCS
+        self, buf1: bytearray, buf2: Optional[bytearray] = None, /, cs: int = SPI_NOCS
     ):
         length = len(buf1)
         if buf2 is None:
