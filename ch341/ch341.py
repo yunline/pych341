@@ -2,7 +2,7 @@ import ctypes
 from ctypes import *
 import platform
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 pyver = [int(i) for i in platform.python_version_tuple()]
 
@@ -267,15 +267,47 @@ class Ch341:
         /,
         cs: int = SPI_NOCS,
     ):
+        _buf1 = buf1.copy()
+        if buf2 is None:
+            _buf2 = None
+        else:
+            _buf2 = buf2.copy()
+        self.spi_swap(_buf1, _buf2, cs=cs)
+
+    def spi_read(
+        self,
+        length: int,
+        n_channels: int = 1,
+        cs: int = SPI_NOCS,
+    ) -> Union[bytearray, tuple[bytearray]]:
+        if n_channels == 1:
+            buf = bytearray(length)
+            self.spi_swap(buf, cs=cs)
+            return buf
+        elif n_channels == 2:
+            buf1 = bytearray(length)
+            buf2 = bytearray(length)
+            self.spi_swap(buf1, buf2, cs=cs)
+            return buf1, buf2
+        else:
+            raise ValueError("'n_channels' should be 1 or 2")
+
+    def spi_swap(
+        self,
+        buf1: bytearray,
+        buf2: Optional[bytearray] = None,
+        /,
+        cs: int = SPI_NOCS,
+    ):
         length = len(buf1)
         if buf2 is None:
-            write_buf = (c_ubyte * length).from_buffer(buf1.copy())
+            write_buf = (c_ubyte * length).from_buffer(buf1)
             result = ch341dll.CH341StreamSPI4(self.index, cs, length, byref(write_buf))
         else:
             if length != len(buf2):
                 raise CH341Error("Length of buf1 and buf2 must be the same")
-            write_buf1 = (c_ubyte * length).from_buffer(buf1.copy())
-            write_buf2 = (c_ubyte * length).from_buffer(buf2.copy())
+            write_buf1 = (c_ubyte * length).from_buffer(buf1)
+            write_buf2 = (c_ubyte * length).from_buffer(buf2)
             result = ch341dll.CH341StreamSPI5(
                 self.index,
                 cs,
