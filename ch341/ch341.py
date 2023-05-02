@@ -72,6 +72,8 @@ class Ch341:
     def __init__(self, index: int = 0):
         self.index = index
         self._eeprom_type = None
+        self._i2c_speed = 0
+        self._spi_bit_order = SPI_LSBFIRST
 
     def open(self, exclusive: bool = False):
         self.handle = ch341dll.CH341OpenDevice(self.index)
@@ -92,6 +94,13 @@ class Ch341:
 
     def reset(self):
         result = ch341dll.CH341ResetDevice(self.index)
+        if not result:
+            raise CH341Error("Operation Failed.")
+
+    def _update_config(self):
+        result = ch341dll.CH341SetStream(
+            self.index, self._i2c_speed | self._spi_bit_order
+        )
         if not result:
             raise CH341Error("Operation Failed.")
 
@@ -162,15 +171,13 @@ class Ch341:
         if not result:
             raise CH341Error("Operation Failed.")
 
-    def i2c_set_speed(self, speed: int):
+    def set_i2c_speed(self, speed: int):
         # speed = 0: 20  kHz
         # speed = 1: 100 kHz
         # speed = 2: 400 kHz
         # speed = 3: 800 kHz
-        speed = max(0, min(3, speed))
-        result = ch341dll.CH341SetStream(self.index, speed)
-        if not result:
-            raise CH341Error("Operation Failed.")
+        self._i2c_speed = max(0, min(3, speed))
+        self._update_config()
 
     def i2c_read(
         self,
@@ -248,6 +255,10 @@ class Ch341:
         )
         if not result:
             raise CH341Error("Operation Failed.")
+
+    def set_spi_bit_order(self, bit_order: int):
+        self._spi_bit_order = bit_order
+        self._update_config()
 
     def spi_write(
         self,

@@ -41,7 +41,7 @@ def mpu6050_init(dev):
 with Ch341(0) as dev:
     import time
 
-    dev.i2c_set_speed(3)
+    dev.set_i2c_speed(3)
     mpu6050_init(dev)
     while 1:
         print("gyro(%d\t%d\t%d\t)" % mpu6050_read_gyro(dev))
