@@ -172,25 +172,37 @@ class Ch341:
         if not result:
             raise CH341Error("Operation Failed.")
 
-    def i2c_read(self, dev_addr: int, addr: int, length: int, buf: bytearray = None):
+    def i2c_read(
+        self,
+        dev_addr: int,
+        addr: int,
+        buf: Optional[bytearray] = None,
+        length: Optional[int] = None,
+    ) -> bytearray:
+        if buf is None and length is None:
+            raise ValueError("'buf' and 'length' shouldn't be both None.")
+        if length is None:
+            length = len(buf)
         if buf is None:
-            read_buf = (c_ubyte * length)()
-        else:
-            read_buf = (c_ubyte * length).from_buffer(buf)
+            buf = bytearray(length)
+        read_buf = (c_ubyte * length).from_buffer(buf)
+
         write_buf = (c_ubyte * 2)((dev_addr << 1), addr)
         result = ch341dll.CH341StreamI2C(
             self.index, 2, byref(write_buf), length, byref(read_buf)
         )
         if not result:
             raise CH341Error("Operation Failed.")
-        return read_buf
+        return buf
 
-    def i2c_write(self, dev_addr: int, addr: int, length: int, data: bytearray):
-        buf = bytearray([dev_addr << 1, addr])
-        buf.extend(data)
-        write_buf = (c_ubyte * (length + 2)).from_buffer(buf)
+    def i2c_write(self, dev_addr: int, addr: int, buf: bytearray):
+        _buf = bytearray([dev_addr << 1, addr])
+        _buf.extend(buf)
+        write_buf = (c_ubyte * (len(buf) + 2)).from_buffer(_buf)
 
-        result = ch341dll.CH341StreamI2C(self.index, length + 2, byref(write_buf), 0, 0)
+        result = ch341dll.CH341StreamI2C(
+            self.index, len(buf) + 2, byref(write_buf), 0, 0
+        )
         if not result:
             raise CH341Error("Operation Failed.")
 
@@ -202,9 +214,21 @@ class Ch341:
             )
         self._eeprom_type = eeprom_type
 
-    def eeprom_read(self, addr: int, buf: bytearray, length: int):
+    def eeprom_read(
+        self,
+        addr: int,
+        buf: Optional[bytearray] = None,
+        length: Optional[int] = None,
+    ) -> bytearray:
         if self._eeprom_type is None:
             raise CH341Error("EEPROM type is not specified.")
+        if buf is None and length is None:
+            raise ValueError("'buf' and 'length' shouldn't be both None.")
+        if length is None:
+            length = len(buf)
+        if buf is None:
+            buf = bytearray(length)
+
         read_buf = (c_ubyte * length).from_buffer(buf)
 
         result = ch341dll.CH341ReadEEPROM(
@@ -212,22 +236,25 @@ class Ch341:
         )
         if not result:
             raise CH341Error("Operation Failed.")
+        return buf
 
-    def eeprom_write(self, addr: int, buf: bytearray, length: Optional[int] = None, /):
+    def eeprom_write(self, addr: int, buf: bytearray):
         if self._eeprom_type is None:
             raise CH341Error("EEPROM type is not specified.")
-        if length is None:
-            length = len(buf)
-        write_buf = (c_ubyte * length).from_buffer(buf)
+        write_buf = (c_ubyte * len(buf)).from_buffer(buf)
 
         result = ch341dll.CH341WriteEEPROM(
-            self.index, self._eeprom_type, addr, length, byref(write_buf)
+            self.index, self._eeprom_type, addr, len(buf), byref(write_buf)
         )
         if not result:
             raise CH341Error("Operation Failed.")
 
     def spi_write(
-        self, buf1: bytearray, buf2: Optional[bytearray] = None, /, cs: int = SPI_NOCS
+        self,
+        buf1: bytearray,
+        buf2: Optional[bytearray] = None,
+        /,
+        cs: int = SPI_NOCS,
     ):
         length = len(buf1)
         if buf2 is None:
