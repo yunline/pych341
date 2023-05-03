@@ -74,6 +74,8 @@ class Ch341:
         self._eeprom_type = None
         self._i2c_speed = 0
         self._spi_bit_order = SPI_LSBFIRST
+        self._io_rw = 0x00
+        self._io_out = 0x00
 
     def open(self, exclusive: bool = False):
         self.handle = ch341dll.CH341OpenDevice(self.index)
@@ -83,6 +85,7 @@ class Ch341:
         self.set_exclusive(exclusive)
 
     def close(self):
+        self.reset()
         ch341dll.CH341CloseDevice(self.index)
 
     def __enter__(self):
@@ -93,6 +96,7 @@ class Ch341:
         self.close()
 
     def reset(self):
+        self.update_io_state(0x00, 0x00)  # set all IOs to read mode
         result = ch341dll.CH341ResetDevice(self.index)
         if not result:
             raise CH341Error("Operation Failed.")
@@ -318,6 +322,28 @@ class Ch341:
 
         if not result:
             raise CH341Error("Operation Failed.")
+
+    def _update_io_state(self):
+        result = ch341dll.CH341Set_D5_D0(
+            self.index, c_ubyte(self._io_rw), c_ubyte(self._io_out)
+        )
+        if not result:
+            raise CH341Error("Operation Failed.")
+
+    def update_io_state(self, io_rw: int, io_out: int):
+        self._io_rw = io_rw
+        self._io_out = io_out
+        self._update_io_state()
+
+    def set_io_rw(self, io: int, rw: int):
+        self._io_rw &= 0xFF ^ (1 << io)
+        self._io_rw |= bool(rw) << io
+        self._update_io_state()
+
+    def write_io(self, io: int, level: int):
+        self._io_out &= 0xFF ^ (1 << io)
+        self._io_out |= bool(level) << io
+        self._update_io_state()
 
 
 eeprom_enum = [
