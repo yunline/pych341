@@ -66,6 +66,8 @@ SPI_CS1 = 0x81
 SPI_CS2 = 0x82
 SPI_MSBFIRST = 0x80
 SPI_LSBFIRST = 0x00
+IO_READ = 0
+IO_WRITE = 1
 
 
 class Ch341:
@@ -340,7 +342,7 @@ class Ch341:
         self._io_rw |= bool(rw) << io
         self._update_io_state()
 
-    def write_io(self, io: int, level: int):
+    def io_write(self, io: int, level: int):
         self._io_out &= 0xFF ^ (1 << io)
         self._io_out |= bool(level) << io
         self._update_io_state()
@@ -363,21 +365,18 @@ eeprom_enum = [
 ]
 globals().update({i[1]: i[0] for i in enumerate(eeprom_enum)})
 
-IC_VER_CH341A = 0x20
-IC_VER_CH341A3 = 0x30
-
 __all__ = [
     # Errors
     "CH341Error",
     # Constants
-    "IC_VER_CH341A",
-    "IC_VER_CH341A3",
     "SPI_NOCS",
     "SPI_CS0",
     "SPI_CS1",
     "SPI_CS2",
     "SPI_MSBFIRST",
     "SPI_LSBFIRST",
+    "IO_READ",
+    "IO_WRITE",
     # Classes and Methods
     "Ch341",
     "get_dll_version",
