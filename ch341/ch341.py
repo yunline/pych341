@@ -352,11 +352,11 @@ class Ch341:
         return bool(buf & (1 << io))
 
     def io_read_all(self) -> int:
-        buf = c_uint16()
+        buf = c_ulong()
         result = ch341dll.CH341GetInput(self.index, byref(buf))
         if not result:
             raise CH341Error("Operation Failed.")
-        return buf
+        return buf.value
 
 
 eeprom_enum = [
