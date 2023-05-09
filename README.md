@@ -20,7 +20,7 @@ python setup.py install
 - [x] i2c
 - [x] spi
 - [x] gpio
-- [ ] 中断回调
+- [x] 中断回调
 
 **例程**
 - [x] mpu6050例程

@@ -2,7 +2,7 @@ import ctypes
 from ctypes import *
 import platform
 import warnings
-from typing import Optional, Union
+from typing import Optional, Union, Callable
 
 pyver = [int(i) for i in platform.python_version_tuple()]
 
@@ -78,6 +78,7 @@ class Ch341:
         self._spi_bit_order = SPI_LSBFIRST
         self._io_rw = 0x00
         self._io_out = 0x00
+        self._callback = c_void_p(0)
 
     def open(self, exclusive: bool = False):
         self.handle = ch341dll.CH341OpenDevice(self.index)
@@ -87,6 +88,8 @@ class Ch341:
         self.set_exclusive(exclusive)
 
     def close(self):
+        self.interrupt_clear()
+        self.update_io_state(0x00, 0x00)  # set all IOs to read mode
         self.reset()
         ch341dll.CH341CloseDevice(self.index)
 
@@ -98,7 +101,6 @@ class Ch341:
         self.close()
 
     def reset(self):
-        self.update_io_state(0x00, 0x00)  # set all IOs to read mode
         result = ch341dll.CH341ResetDevice(self.index)
         if not result:
             raise CH341Error("Operation Failed.")
@@ -396,6 +398,30 @@ class Ch341:
         if not result:
             raise CH341Error("Operation Failed.")
         return buf.value
+
+    def interrupt_bind(self, fn: Callable[[int], None]):
+        """
+        Setup a callback function called on a raising edge on INT#
+        The callback function will be called in another thread
+        """
+
+        @WINFUNCTYPE(None, c_ulong)
+        def _callback(status):
+            fn(status)
+
+        self._callback = _callback  # Store to prevent being collected by GC
+        result = ch341dll.CH341SetIntRoutine(self.index, self._callback)
+        if not result:
+            raise CH341Error("Operation Failed.")
+
+    def interrupt_clear(self):
+        """
+        Clear the callback set by interrupt_bind()
+        """
+        self._callback = c_void_p(0)
+        result = ch341dll.CH341SetIntRoutine(self.index, self._callback)
+        if not result:
+            raise CH341Error("Operation Failed.")
 
 
 eeprom_enum = [
