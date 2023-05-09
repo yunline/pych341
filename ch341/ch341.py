@@ -149,7 +149,7 @@ class Ch341:
         print(f"{len(l)} address{' was' if len(l)==1 else 'es were'} detected.")
 
     def _i2c_out_byte_check_ack(self, byte):
-        buf = (c_ubyte * 10)()
+        buf = (c_uint8 * 10)()
         buf[0] = mCH341A_CMD_I2C_STREAM
         buf[1] = mCH341A_CMD_I2C_STM_OUT
         buf[2] = byte
@@ -168,7 +168,7 @@ class Ch341:
         return True
 
     def _i2c_start_stop(self, start=1):
-        cmd = (c_ubyte * 3)()
+        cmd = (c_uint8 * 3)()
         cmd[0] = mCH341A_CMD_I2C_STREAM
         cmd[1] = mCH341A_CMD_I2C_STM_STA if start else mCH341A_CMD_I2C_STM_STO
         cmd[2] = mCH341A_CMD_I2C_STM_END
@@ -198,9 +198,9 @@ class Ch341:
             length = len(buf)
         if buf is None:
             buf = bytearray(length)
-        read_buf = (c_ubyte * length).from_buffer(buf)
+        read_buf = (c_uint8 * length).from_buffer(buf)
 
-        write_buf = (c_ubyte * 2)((dev_addr << 1), addr)
+        write_buf = (c_uint8 * 2)((dev_addr << 1), addr)
         result = ch341dll.CH341StreamI2C(
             self.index, 2, byref(write_buf), length, byref(read_buf)
         )
@@ -211,7 +211,7 @@ class Ch341:
     def i2c_write(self, dev_addr: int, addr: int, buf: bytearray):
         _buf = bytearray([dev_addr << 1, addr])
         _buf.extend(buf)
-        write_buf = (c_ubyte * (len(buf) + 2)).from_buffer(_buf)
+        write_buf = (c_uint8 * (len(buf) + 2)).from_buffer(_buf)
 
         result = ch341dll.CH341StreamI2C(
             self.index, len(buf) + 2, byref(write_buf), 0, 0
@@ -242,7 +242,7 @@ class Ch341:
         if buf is None:
             buf = bytearray(length)
 
-        read_buf = (c_ubyte * length).from_buffer(buf)
+        read_buf = (c_uint8 * length).from_buffer(buf)
 
         result = ch341dll.CH341ReadEEPROM(
             self.index, self._eeprom_type, addr, length, byref(read_buf)
@@ -254,7 +254,7 @@ class Ch341:
     def eeprom_write(self, addr: int, buf: bytearray):
         if self._eeprom_type is None:
             raise CH341Error("EEPROM type is not specified.")
-        write_buf = (c_ubyte * len(buf)).from_buffer(buf)
+        write_buf = (c_uint8 * len(buf)).from_buffer(buf)
 
         result = ch341dll.CH341WriteEEPROM(
             self.index, self._eeprom_type, addr, len(buf), byref(write_buf)
@@ -307,13 +307,13 @@ class Ch341:
     ):
         length = len(buf1)
         if buf2 is None:
-            write_buf = (c_ubyte * length).from_buffer(buf1)
+            write_buf = (c_uint8 * length).from_buffer(buf1)
             result = ch341dll.CH341StreamSPI4(self.index, cs, length, byref(write_buf))
         else:
             if length != len(buf2):
                 raise CH341Error("Length of buf1 and buf2 must be the same")
-            write_buf1 = (c_ubyte * length).from_buffer(buf1)
-            write_buf2 = (c_ubyte * length).from_buffer(buf2)
+            write_buf1 = (c_uint8 * length).from_buffer(buf1)
+            write_buf2 = (c_uint8 * length).from_buffer(buf2)
             result = ch341dll.CH341StreamSPI5(
                 self.index,
                 cs,
@@ -327,7 +327,7 @@ class Ch341:
 
     def _update_io_state(self):
         result = ch341dll.CH341Set_D5_D0(
-            self.index, c_ubyte(self._io_rw), c_ubyte(self._io_out)
+            self.index, c_uint8(self._io_rw), c_uint8(self._io_out)
         )
         if not result:
             raise CH341Error("Operation Failed.")
