@@ -262,6 +262,45 @@ class Ch341:
         if not result:
             raise CH341Error("Operation Failed.")
 
+    def spi_init(self, cs: int = SPI_NOCS):
+        """
+        Init the gpio to spi mode.
+        spi_init() should be called before SPI is used.
+
+        Warning:
+            After calling this function, the output value of these IOs
+            shouldn't be changed unless you no longer use some of them
+            in SPI transmition.
+            - IO3 SCK
+            - IO5 DOUT0
+            - IO4 DOUT1
+            - IO0 CS0
+            - IO1 CS1
+            - IO2 CS2
+            SPI may work improperly if some of these io is changed unintentionally.
+        """
+        self.io_write(3, 0)  # set sck to default low
+        self.set_io_rw(3, 1)
+
+        self.io_write(5, 0)  # set dout0 to default low
+        self.set_io_rw(5, 1)
+
+        self.io_write(5, 0)  # set dout1 to default low
+        self.set_io_rw(5, 1)
+
+        # set cs to default high
+        if cs == SPI_CS0:
+            _cs = 0
+        elif cs == SPI_CS1:
+            _cs = 1
+        elif cs == SPI_CS2:
+            _cs = 2
+        else:
+            return
+
+        self.io_write(_cs, 1)
+        self.set_io_rw(_cs, 1)
+
     def set_spi_bit_order(self, bit_order: int):
         self._spi_bit_order = bit_order
         self._update_config()
