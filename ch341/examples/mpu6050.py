@@ -1,5 +1,4 @@
 from ch341 import *
-import time
 import struct
 
 MPU6050_ADDR = 0x68
@@ -39,8 +38,6 @@ def mpu6050_init(dev):
 
 
 with Ch341(0) as dev:
-    import time
-
     dev.set_i2c_speed(3)
     mpu6050_init(dev)
     while 1:

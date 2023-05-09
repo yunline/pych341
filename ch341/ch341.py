@@ -1,4 +1,3 @@
-import ctypes
 from ctypes import *
 import platform
 import warnings
@@ -139,16 +138,18 @@ class Ch341:
         return out
 
     def i2c_scan_print(self):
-        l = self.i2c_scan()
+        device_list = self.i2c_scan()
         for y in range(8):
             for x in range(16):
                 addr = (y << 4) + x
-                if addr in l:
+                if addr in device_list:
                     print("0x{0:02X}".format(addr), end=" ")
                 else:
                     print("[  ]", end=" ")
             print("")
-        print(f"{len(l)} address{' was' if len(l)==1 else 'es were'} detected.")
+        print(
+            f"{len(device_list)} address{' was' if len(device_list)==1 else 'es were'} detected."
+        )
 
     def _i2c_out_byte_check_ack(self, byte):
         buf = (c_uint8 * 10)()
