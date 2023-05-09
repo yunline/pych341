@@ -6,8 +6,8 @@ from typing import Optional, Union
 
 pyver = [int(i) for i in platform.python_version_tuple()]
 
-if not (pyver[0] >= 3 and pyver[1] >= 10):
-    warnings.warn("This Library requires python3.10+")
+if not (pyver[0] >= 3 and pyver[1] >= 9):
+    warnings.warn("This Library requires python3.9+")
 
 
 class CH341Error(Exception):

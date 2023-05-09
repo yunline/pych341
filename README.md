@@ -12,7 +12,7 @@ python setup.py install
 ```
 
 ### 版本依赖
-- python 3.10+
+- python 3.9+
 
 ### 开发进度
 
