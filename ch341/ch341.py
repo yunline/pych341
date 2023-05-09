@@ -347,6 +347,17 @@ class Ch341:
         self._io_out |= bool(level) << io
         self._update_io_state()
 
+    def io_read(self, io: int) -> bool:
+        buf = self.io_read_all()
+        return bool(buf & (1 << io))
+
+    def io_read_all(self) -> int:
+        buf = c_uint16()
+        result = ch341dll.CH341GetInput(self.index, byref(buf))
+        if not result:
+            raise CH341Error("Operation Failed.")
+        return buf
+
 
 eeprom_enum = [
     "EEPROM_24C01",
